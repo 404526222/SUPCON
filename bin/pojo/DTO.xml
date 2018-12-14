@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <mapper namespace="pojo">
+        <select id="select" parameterType="InputDTO" resultType="OutputDTO">
+        <!-- The frequency is the cycle of signal -->
+            <if test="frequency==0">
+            	select 
+            	date_format(start_time,'%Y-%m-%d %H:%i:%S') as start_time,
+            	acs_id,
+            	entrance_id,
+            	<!-- add the id of lane -->
+            	<if test="object==2">
+            		lane_id,
+            	</if>
+	            <![CDATA[sum(passing_vehicle_number) as passing_vehicle_number 
+	            from t_cycle_flow_out 
+	            where start_time>=#{start_time} and start_time<#{end_time} and acs_id=#{acs_id} 
+	            group by start_time,acs_id,entrance_id ]]>
+            	<!-- add the id of lane -->
+            	<if test="object==2">
+            		,lane_id 
+            	</if>
+            	;
+            </if>
+            
+		<!-- The frequency is constant in minute -->
+            <if test='frequency==5 or frequency==10 or frequency==15 or frequency==30'>
+	            select 
+	            <!-- The frequency is 5 minutes -->
+	            <if test='frequency==5'>
+	            CONCAT(DATE(start_time),' ',rpad(HOUR(start_time),2,0),':',lpad(truncate(MINUTE(start_time)/#{frequency},0)*#{frequency},2,0),':','00') as start_time,
+	            </if>
+	            <!-- The frequency is 10 or 15 or 30 minutes -->
+	            <if test='frequency==10 or frequency==15 or frequency==30'>
+	            CONCAT(DATE(start_time),' ',rpad(HOUR(start_time),2,0),':',rpad(truncate(MINUTE(start_time)/#{frequency},0)*#{frequency},2,0),':','00') as start_time,
+	            </if>
+	            acs_id,
+	            entrance_id,
+	            <!-- add the id of lane -->
+	            <if test='object==2'>
+	            	lane_id,
+	            </if>
+	            <![CDATA[sum(passing_vehicle_number) as passing_vehicle_number 
+	            from t_cycle_flow_out 
+	            where start_time>=#{start_time} and start_time<#{end_time} and acs_id=#{acs_id} 
+	            group by DATE(start_time),HOUR(start_time),
+	            truncate(MINUTE(start_time)/#{frequency},0)*#{frequency},acs_id,entrance_id]]>
+	            <!-- add the id of lane -->
+	            <if test='object==2'>
+	            	,lane_id
+	            </if>
+	            ;
+            </if>
+            
+		<!-- The frequency is constant in hour -->
+            <if test='frequency==1'>
+            	select 
+            	date_format(start_time,'%Y-%m-%d %H') as start_time, 
+            	acs_id,
+            	entrance_id,
+            	<!-- add the id of lane -->
+            	<if test='object==2'>
+            		lane_id,
+            	</if>
+            	<![CDATA[sum(passing_vehicle_number) as passing_vehicle_number 
+            	from t_cycle_flow_out 
+            	where start_time>=#{start_time} and start_time<#{end_time} and acs_id=#{acs_id} 
+            	group by date_format(start_time,'%Y-%m-%d %H'),acs_id,entrance_id ]]>
+            	<!-- add the id of lane -->
+            	<if test='object==2'>
+            		,lane_id
+            	</if>
+            	order by date_format(start_time,'%Y-%m-%d %H'),acs_id,entrance_id
+            	<!-- add the id of lane -->
+            	<if test='object==2'>
+            		,lane_id
+            	</if>
+            	;
+            </if>
+        </select>
+    </mapper>

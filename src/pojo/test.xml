@@ -1,0 +1,44 @@
+		<select id="select" parameterType="DTO" resultType="DTO">
+        	select
+        	<if test="frequency==1">
+        		date_format(start_time,'%Y-%m-%d %H:%i:%S') as start_time,
+        	</if>
+        	<if test='frequency==2'>
+        		CONCAT(DATE(start_time),' ',rpad(HOUR(start_time),2,0),':',rpad(truncate(MINUTE(start_time)/10,0)*10,2,0),':','00') as start_time,
+        	</if>
+        	<if test='frequency==3'>
+        		date_format(start_time,'%Y-%m-%d %H') as start_time,
+        	</if>
+        	acs_id,
+            entrance_id,
+            <if test="object==2">
+            		lane_id,
+            </if>
+            <![CDATA[sum(passing_vehicle_number) as passing_vehicle_number 
+	        from t_cycle_flow_out 
+	        where start_time>=#{start_time} and start_time<#{end_time} and acs_id=#{acs_id}]]>
+	        <if test="frequency==1">
+	        	group by start_time,acs_id,entrance_id
+	        	<if test="object==2">
+            		,lane_id
+            	</if>
+            </if>
+            <if test='frequency==2'>
+            	group by DATE(start_time),HOUR(start_time),
+	            truncate(MINUTE(start_time)/10,0)*10,acs_id,entrance_id
+	            <if test="object==2">
+            		,lane_id
+            	</if>
+            </if>
+            <if test='frequency==3'>
+            	group by date_format(start_time,'%Y-%m-%d %H'),acs_id,entrance_id
+            	<if test="object==2">
+            		,lane_id
+            	</if>
+            	order by date_format(start_time,'%Y-%m-%d %H'),acs_id,entrance_id
+            	<if test="object==2">
+            		,lane_id
+            	</if>
+            </if>
+            ;
+		</select>
